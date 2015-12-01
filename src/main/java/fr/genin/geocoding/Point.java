@@ -20,9 +20,9 @@ public interface Point<T> {
 
     T getData();
 
-    Optional<BigDecimal> getLat();
+    Optional<Double> getLat();
 
-    Optional<BigDecimal> getLon();
+    Optional<Double> getLon();
 
     boolean isPresent();
 
@@ -33,11 +33,11 @@ public interface Point<T> {
 
         GeoCod.PointBuilder lat(Number lat);
 
-        GeoCod.PointBuilder lat(BigDecimal lat);
+        GeoCod.PointBuilder lat(Double  lat);
 
         GeoCod.PointBuilder lon(Number lon);
 
-        GeoCod.PointBuilder lon(BigDecimal lon);
+        GeoCod.PointBuilder lon(Double lon);
 
         Point<T> build();
     }

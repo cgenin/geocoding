@@ -16,9 +16,9 @@ import static fr.genin.geocoding.BigDecimals.of;
 
 public final class GeoCod {
 
-    public static final BigDecimal DEG2MILES = of(60).multiply(of(1.1515));
-    public static final BigDecimal MILES2NAUTIC = of(0.8684);
-    public static final BigDecimal MILES2KM = of(1.609344);
+    public static final Double DEG2MILES = 60.0* 1.1515;
+    public static final Double MILES2NAUTIC = 0.8684;
+    public static final Double MILES2KM = 1.609344;
 
     public static <T> Sorter<T> sorter(Point<T> reference) {
         return new Sorter<>(reference);
@@ -40,29 +40,30 @@ public final class GeoCod {
         if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
             return new Distance();
         }
-        return between(of(lat1), of(lon1), of(lat2), of(lon2));
+        return between(lat1.doubleValue(), lon1.doubleValue(), lat2.doubleValue(), lon2.doubleValue());
     }
 
-    public static Distance between(BigDecimal lat1, BigDecimal lon1, BigDecimal lat2, BigDecimal lon2) {
+    private static Distance between(Double lat1, Double lon1, Double lat2, Double lon2) {
         Objects.requireNonNull(lat1);
         Objects.requireNonNull(lon1);
         Objects.requireNonNull(lat2);
         Objects.requireNonNull(lon2);
-        final BigDecimal theta = lon1.subtract(lon2);
-        final BigDecimal dist = BigDecimals.sin(BigDecimals.deg2rad(lat1)).multiply(BigDecimals.sin(BigDecimals.deg2rad(lat2))).add(BigDecimals.cos(BigDecimals.deg2rad(lat1)).multiply(BigDecimals.cos(BigDecimals.deg2rad(lat2)).multiply(BigDecimals.cos(BigDecimals.deg2rad(theta)))));
-        final BigDecimal distAcos = BigDecimals.acos(dist);
-        final BigDecimal distDeg = BigDecimals.rad2deg(distAcos);
-        final BigDecimal miles = distDeg.multiply(DEG2MILES);
+        final Double theta = lon1 - lon2;
+        final Double dist = Math.sin(Doubles.deg2rad(lat1)) * Math.sin(Doubles.deg2rad(lat2))
+                + (Math.cos(Doubles.deg2rad(lat1)) * (Math.cos(Doubles.deg2rad(lat2)) * (Math.cos(Doubles.deg2rad(theta)))));
+        final Double distAcos = Math.acos(dist);
+        final Double distDeg = Doubles.rad2deg(distAcos);
+        final Double miles = distDeg * DEG2MILES;
         return new Distance(Optional.of(miles));
     }
 
     public static class PointImpl<T> implements Point<T> {
         private final T data;
-        private final Optional<BigDecimal> lat;
-        private final Optional<BigDecimal> lon;
+        private final Optional<Double> lat;
+        private final Optional<Double> lon;
 
 
-        private PointImpl(T data, Optional<BigDecimal> lat, Optional<BigDecimal> lon) {
+        private PointImpl(T data, Optional<Double> lat, Optional<Double> lon) {
             this.data = data;
             this.lat = lat;
             this.lon = lon;
@@ -74,12 +75,12 @@ public final class GeoCod {
         }
 
         @Override
-        public Optional<BigDecimal> getLat() {
+        public Optional<Double> getLat() {
             return lat;
         }
 
         @Override
-        public Optional<BigDecimal> getLon() {
+        public Optional<Double> getLon() {
             return lon;
         }
 
@@ -98,8 +99,8 @@ public final class GeoCod {
 
     public static class PointBuilder<T> implements Point.Builder {
         private final T data;
-        private BigDecimal lat;
-        private BigDecimal lon;
+        private Double lat;
+        private Double lon;
 
 
         PointBuilder(T data) {
@@ -112,13 +113,14 @@ public final class GeoCod {
             if (lat == null) {
                 return this;
             }
-            final BigDecimal latBd = of(lat);
-            return lat(latBd);
+            return lat(lat.doubleValue());
         }
 
         @Override
-        public PointBuilder lat(BigDecimal lat) {
-            Objects.requireNonNull(lat);
+        public PointBuilder lat(Double lat) {
+            if (lat == null) {
+                return this;
+            }
             this.lat = lat;
             return this;
         }
@@ -129,13 +131,14 @@ public final class GeoCod {
             if (lon == null) {
                 return this;
             }
-            final BigDecimal lonBd = of(lon);
-            return lon(lonBd);
+            return lon(lon.doubleValue());
         }
 
         @Override
-        public PointBuilder lon(BigDecimal lon) {
-            Objects.requireNonNull(lon);
+        public PointBuilder lon(Double lon) {
+            if (lon == null) {
+                return this;
+            }
             this.lon = lon;
             return this;
         }
@@ -149,27 +152,27 @@ public final class GeoCod {
 
     public static class Distance implements Comparable<Distance> {
 
-        private final Optional<BigDecimal> miles;
+        private final Optional<Double> miles;
 
-        private Distance(Optional<BigDecimal> miles) {
+        private Distance(Optional<Double> miles) {
             this.miles = miles;
         }
 
         public Distance() {
-            this(Optional.<BigDecimal>empty());
+            this(Optional.<Double>empty());
         }
 
 
-        public Optional<BigDecimal> miles() {
+        public Optional<Double> miles() {
             return miles;
         }
 
-        public Optional<BigDecimal> kilometer() {
-            return miles.map(m -> m.multiply(MILES2KM));
+        public Optional<Double> kilometer() {
+            return miles.map(m -> m * MILES2KM);
         }
 
-        public Optional<BigDecimal> nautic() {
-            return miles.map(m -> m.multiply(MILES2NAUTIC));
+        public Optional<Double> nautic() {
+            return miles.map(m -> m * MILES2NAUTIC);
         }
 
         @Override

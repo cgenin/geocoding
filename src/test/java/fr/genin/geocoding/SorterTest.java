@@ -55,12 +55,12 @@ public class SorterTest {
         final List<GeoCod.Distance> distances = GeoCod.<String>sorter(46.348164, -0.387781).desc().distances(LIST);
         final List<String> bigDecimals = distances.stream()
                 .flatMap(d -> d.kilometer().map(Stream::of).orElse(Stream.empty()))
-                .map(bg -> bg.setScale(15, BigDecimal.ROUND_HALF_EVEN).toString())
+                .map(bg -> bg.toString())
                 .collect(Collectors.toList());
         assertThat(bigDecimals).containsExactly(
-                "61.469046913876830",
-                "6.494780510287171",
-                "62.362152868043706");
+                "61.46904691380353",
+                "6.494780510980947",
+                "62.36215286811597");
     }
 
     @Test
