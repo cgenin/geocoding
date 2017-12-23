@@ -4,7 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import fr.genin.geocoding.BigDecimals;
 import fr.genin.geocoding.Depts;
-import fr.genin.geocoding.GeoCod;
+import fr.genin.geocoding.Distances;
 import fr.genin.geocoding.Point;
 import org.junit.Test;
 
@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ExampleTest {
 
-    public static Double parse(String s) {
+    private static Double parse(String s) {
         try {
             return Double.valueOf(s);
         } catch (NumberFormatException nbe) {
@@ -33,14 +33,19 @@ public class ExampleTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void withFilter() throws IOException, URISyntaxException {
         final List<Commune> communes = getCommunes();
         final long l1 = System.currentTimeMillis();
 
-        final List<Commune> filtered = communes.stream().filter(Depts.limitroph("86").predicate(input -> input.getCodes_postaux())).collect(Collectors.toList());
-        final List<Commune> sorting = GeoCod
+        final List<Commune> filtered = communes.stream().filter(Depts.limitroph("86").predicate(Commune::getCodes_postaux)).collect(Collectors.toList());
+        final List<Commune> sorting = Distances
                 .<Commune>sorter(46.246992, 0.832142)
-                .sort(filtered, (c) -> Point.builder(c).lat(c.getLatitude()).lon(c.getLongitude()).build());
+                .sort(filtered, (c) -> Point.builder(c)
+                        .lat(c.getLatitude())
+                        .lon(c.getLongitude())
+                        .build()
+                );
 
         final long time = System.currentTimeMillis() - l1;
 
@@ -48,25 +53,21 @@ public class ExampleTest {
                 .collect(Collectors.toList())).startsWith("86430","87320","86430","87330","87330");
         assertThat( sorting.stream().limit(5).map(Commune::getName).map(String::toUpperCase)
                 .collect(Collectors.toList())).contains("ADRIERS","BUSSIÈRE-POITEVINE","MOUTERRE-SUR-BLOURDE","SAINT-MARTIAL-SUR-ISOP","SAINT-BARBANT");
-        System.out.println("Duration : " + time);
-        System.out.println("Number : " + filtered.size());
         final BigDecimal average = BigDecimals.of(time).divide(BigDecimals.of(communes.size()), 15, BigDecimal.ROUND_HALF_EVEN);
-        System.out.println("Average : " + average);
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void global() throws IOException, URISyntaxException {
 
         final List<Commune> communes = getCommunes();
         final long l1 = System.currentTimeMillis();
-        final List<Commune> sorting = GeoCod
-                //.<Commune>sorter(46.348164, -0.387781)
+        final List<Commune> sorting = Distances
                 .<Commune>sorter(46.246992, 0.832142)
                 .sort(communes, (c) -> Point.builder(c).lat(c.getLatitude()).lon(c.getLongitude()).build());
         final long time = System.currentTimeMillis() - l1;
         final Stream<Commune> limit = sorting.stream().limit(150);
         final String result = Joiner.on("\n").join(limit.collect(Collectors.toList()));
-        System.out.println(result);
 
         assertThat( sorting.stream().limit(5).map(Commune::getCodes_postaux)
                 .collect(Collectors.toList())).startsWith("86430","87320","86430","87330","87330");

@@ -2,7 +2,6 @@ package fr.genin.geocoding;
 
 import org.junit.Test;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Test Class for GeoCod.Sorter.
+ * Test Class for Distances.Sorter.
  */
 public class SorterTest {
 
@@ -44,15 +43,15 @@ public class SorterTest {
 
     @Test
     public void nulL() {
-        assertThat(GeoCod.<String>sorter(46.348164, -0.387781).sort(null)).isEmpty();
-        assertThat(GeoCod.<String>sorter(46.348164, -0.387781).sort(Collections.EMPTY_LIST)).isEmpty();
-        assertThat(GeoCod.<String>sorter(46.348164, -0.387781).distances(null)).isEmpty();
-        assertThat(GeoCod.<String>sorter(46.348164, -0.387781).distances(Collections.EMPTY_LIST)).isEmpty();
+        assertThat(Distances.<String>sorter(46.348164, -0.387781).sort(null)).isEmpty();
+        assertThat(Distances.<String>sorter(46.348164, -0.387781).sort(Collections.EMPTY_LIST)).isEmpty();
+        assertThat(Distances.<String>sorter(46.348164, -0.387781).distances(null)).isEmpty();
+        assertThat(Distances.<String>sorter(46.348164, -0.387781).distances(Collections.EMPTY_LIST)).isEmpty();
     }
 
     @Test
     public void distances() {
-        final List<GeoCod.Distance> distances = GeoCod.<String>sorter(46.348164, -0.387781).desc().distances(LIST);
+        final List<Distances.Distance> distances = Distances.<String>sorter(46.348164, -0.387781).desc().distances(LIST);
         final List<String> bigDecimals = distances.stream()
                 .flatMap(d -> d.kilometer().map(Stream::of).orElse(Stream.empty()))
                 .map(bg -> bg.toString())
@@ -65,61 +64,61 @@ public class SorterTest {
 
     @Test
     public void desc() {
-        final List<String> sortedInverse = GeoCod.<String>sorter(46.348164, -0.387781).desc().sort(LIST);
+        final List<String> sortedInverse = Distances.<String>sorter(46.348164, -0.387781).desc().sort(LIST);
         assertThat(sortedInverse).isNotNull().isNotEmpty().containsExactly("LA ROCHELLE", "POITIERS", "NIORT");
     }
 
     @Test
     public void asc() {
-        final List<String> sortedByChauray = GeoCod.<String>sorter(46.348164, -0.387781).sort(LIST);
+        final List<String> sortedByChauray = Distances.<String>sorter(46.348164, -0.387781).sort(LIST);
         assertThat(sortedByChauray).isNotNull().isNotEmpty().containsExactly("NIORT", "POITIERS", "LA ROCHELLE");
-        final List<String> sortedWithAsc = GeoCod.<String>sorter(46.348164, -0.387781).asc().sort(LIST);
+        final List<String> sortedWithAsc = Distances.<String>sorter(46.348164, -0.387781).asc().sort(LIST);
         assertThat(sortedWithAsc).isNotNull().isNotEmpty().containsExactly("NIORT", "POITIERS", "LA ROCHELLE");
     }
 
     @Test
     public void ascWithNull() {
-        final List<String> sorted = GeoCod.<String>sorter(46.348164, -0.387781).sort(LIST_WITH_NULL);
+        final List<String> sorted = Distances.<String>sorter(46.348164, -0.387781).sort(LIST_WITH_NULL);
         assertThat(sorted).isNotNull().isNotEmpty().containsExactly("NIORT", "POITIERS", "LA ROCHELLE", "2", "3", "1");
 
     }
 
     @Test
     public void ascWithNullAndSorting() {
-        final List<String> sorted = GeoCod.<String>sorter(46.348164, -0.387781)
+        final List<String> sorted = Distances.<String>sorter(46.348164, -0.387781)
                 .withSubComparatorOfPoints(String::compareTo).sort(LIST_WITH_NULL);
         assertThat(sorted).isNotNull().isNotEmpty().containsExactly("NIORT", "POITIERS", "LA ROCHELLE", "1", "2", "3");
     }
 
     @Test
     public void ascWithNullFirstAndSorting() {
-        final List<String> sorted = GeoCod.<String>sorter(46.348164, -0.387781)
+        final List<String> sorted = Distances.<String>sorter(46.348164, -0.387781)
                 .withSubComparatorOfPoints(String::compareTo).nullsFirst().sort(LIST_WITH_NULL);
         assertThat(sorted).isNotNull().isNotEmpty().containsExactly("1", "2", "3", "NIORT", "POITIERS", "LA ROCHELLE");
     }
 
     @Test
     public void descWithNull() {
-        final List<String> sorted = GeoCod.<String>sorter(46.348164, -0.387781).desc().sort(LIST_WITH_NULL);
+        final List<String> sorted = Distances.<String>sorter(46.348164, -0.387781).desc().sort(LIST_WITH_NULL);
         assertThat(sorted).isNotNull().isNotEmpty().containsExactly("LA ROCHELLE", "POITIERS", "NIORT", "2", "3", "1");
     }
 
     @Test
     public void ascWithNullLAST() {
-        final List<String> sorted = GeoCod.<String>sorter(46.348164, -0.387781).nullsLast().sort(LIST_WITH_NULL);
+        final List<String> sorted = Distances.<String>sorter(46.348164, -0.387781).nullsLast().sort(LIST_WITH_NULL);
         assertThat(sorted).isNotNull().isNotEmpty().containsExactly("NIORT", "POITIERS", "LA ROCHELLE", "2", "3", "1");
 
     }
 
     @Test
     public void ascWithNullFirst() {
-        final List<String> sorted = GeoCod.<String>sorter(46.348164, -0.387781).nullsFirst().sort(LIST_WITH_NULL);
+        final List<String> sorted = Distances.<String>sorter(46.348164, -0.387781).nullsFirst().sort(LIST_WITH_NULL);
         assertThat(sorted).isNotNull().isNotEmpty().containsExactly("2", "3", "1", "NIORT", "POITIERS", "LA ROCHELLE");
     }
 
     @Test
     public void ascWithDataMapper() {
-        final List<Data> sortedByChauray = GeoCod.<Data>sorter(46.348164, -0.387781)
+        final List<Data> sortedByChauray = Distances.<Data>sorter(46.348164, -0.387781)
                 .sort(DATAS, (d) -> Point.builder(d).lat(d.lat).lon(d.lon).build());
         final List<String> collect = sortedByChauray.stream().map(d -> d.test).collect(Collectors.toList());
         assertThat(collect)

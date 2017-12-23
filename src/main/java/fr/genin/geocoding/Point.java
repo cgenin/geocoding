@@ -1,6 +1,5 @@
 package fr.genin.geocoding;
 
-import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -11,11 +10,11 @@ public interface Point<T> {
 
     static <T> Builder<T> builder(T data) {
         Objects.requireNonNull(data);
-        return new GeoCod.PointBuilder<>(data);
+        return new Distances.PointBuilder<>(data);
     }
 
     static <T> Builder<T> builderRef() {
-        return new GeoCod.PointBuilder<>(null);
+        return new Distances.PointBuilder<>(null);
     }
 
     T getData();
@@ -31,13 +30,13 @@ public interface Point<T> {
 
     interface Builder<T> {
 
-        GeoCod.PointBuilder lat(Number lat);
+        Distances.PointBuilder lat(Number lat);
 
-        GeoCod.PointBuilder lat(Double  lat);
+        Distances.PointBuilder lat(Double  lat);
 
-        GeoCod.PointBuilder lon(Number lon);
+        Distances.PointBuilder lon(Number lon);
 
-        GeoCod.PointBuilder lon(Double lon);
+        Distances.PointBuilder lon(Double lon);
 
         Point<T> build();
     }
