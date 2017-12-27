@@ -1,4 +1,4 @@
-package fr.genin.geocoding.example;
+package fr.genin.geocoding;
 
 import fr.ybonnel.csvengine.annotation.CsvColumn;
 import fr.ybonnel.csvengine.annotation.CsvFile;

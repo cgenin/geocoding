@@ -1,19 +1,11 @@
 package fr.genin.geocoding;
 
-import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-
 import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import fr.genin.geocoding.Utils.Splitter;
+import fr.genin.geocoding.Utils.CacheBuilder;
 
 /**
  * Classe d'utilitaire sur les départements français.
@@ -24,6 +16,7 @@ public final class Depts {
 
     /**
      * builder for creating the instance
+     *
      * @return the instance.
      */
     private static synchronized LimitrophBuilder builder() {
@@ -34,13 +27,14 @@ public final class Depts {
                 builder = new LimitrophBuilder(properties);
                 return builder;
             } catch (IOException e) {
-                throw Throwables.propagate(e);
+                throw new IllegalStateException(e);
             }
         });
     }
 
     /**
      * Permet de récupérer les départements limitrophes d'un autre à partir de son N°.
+     *
      * @param noDept le nuémro.
      * @return les limitrophes.
      */
@@ -53,17 +47,15 @@ public final class Depts {
      * class
      */
     private static class LimitrophBuilder {
-        private static Splitter SPLIT_DEPT = Splitter.on(',').omitEmptyStrings().trimResults();
+        private static Splitter SPLIT_DEPT = Splitter.on(',').omitEmptyString();
 
-        private final LoadingCache<String, List<String>> cache = CacheBuilder.newBuilder()
-                .weakKeys().weakValues().build(
-                        new CacheLoader<String, List<String>>() {
-                            public List<String> load(String dept) {
-                                final String property = limitroph.getProperty(dept, "");
+        private final CacheBuilder<String, List<String>> cache = new CacheBuilder<>(
+                (dept)->{
+                    final String property = builder.limitroph.getProperty(dept, "");
+                    return LimitrophBuilder.SPLIT_DEPT.splitToList(property);
+                }
+        );
 
-                                return SPLIT_DEPT.splitToList(property);
-                            }
-                        });
 
         private final Properties limitroph;
 
@@ -84,18 +76,16 @@ public final class Depts {
 
         /**
          * La liste des départements limitrophe.
+         *
          * @return la liste
          */
         public List<String> list() {
-            try {
-                return builder.cache.get(dept);
-            } catch (ExecutionException e) {
-                throw Throwables.propagate(e);
-            }
+            return builder.cache.get(dept);
         }
 
         /**
          * Permet de savoir si le code postal apprtient au départements ou à un département limitrophe.
+         *
          * @param postalCode le code postal
          * @return true si limitrophe ou false dans les autres cas.
          */
@@ -107,13 +97,14 @@ public final class Depts {
          * Permet de créer un prédicat pour les départements limitrophes.
          * Exemple :
          * <code>
-         *  List<String> list = MonStream
-         *          .filter(Depts.limitroph("86")
-         *                          .predicate(obj -> input.codepostal()))
-         *          .collect(Collectors.toList());
+         * List<String> list = MonStream
+         * .filter(Depts.limitroph("86")
+         * .predicate(obj -> input.codepostal()))
+         * .collect(Collectors.toList());
          * </code>
+         *
          * @param postalCodeFunction Un fonction de transformation
-         * @param <T> le type d'objet attendu.
+         * @param <T>                le type d'objet attendu.
          * @return le stream filtré.
          */
         public <T> Predicate<T> predicate(Function<T, String> postalCodeFunction) {

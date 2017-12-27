@@ -1,16 +1,14 @@
 package fr.genin.geocoding;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Throwables;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.sun.istack.internal.NotNull;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import fr.genin.geocoding.Utils.CacheBuilder;
+import fr.genin.geocoding.Utils.Doubles;
+
+import static fr.genin.geocoding.Utils.firstNonNull;
 
 /**
  * Geocoding utility class.
@@ -20,6 +18,7 @@ public final class Distances {
     private static final Double DEG2MILES = 60.0 * 1.1515;
     static final Double MILES2NAUTIC = 0.8684;
     static final Double MILES2KM = 1.609344;
+
 
     /**
      * create an sorter instance to sort point from reference point.
@@ -57,7 +56,12 @@ public final class Distances {
         if (pt1.isEmpty() || pt2.isEmpty()) {
             return new Distance();
         }
-        return between(pt1.getLat().get(), pt1.getLon().get(), pt2.getLat().get(), pt2.getLon().get());
+        return between(
+                pt1.getLat().orElseThrow(() -> new IllegalArgumentException("The first point must have geo Datas")),
+                pt1.getLon().orElseThrow(() -> new IllegalArgumentException("The first point must have geo Datas")),
+                pt2.getLat().orElseThrow(() -> new IllegalArgumentException("The second point must have geo Datas")),
+                pt2.getLon().orElseThrow(() -> new IllegalArgumentException("The second point must have geo Datas"))
+        );
     }
 
     /**
@@ -127,12 +131,6 @@ public final class Distances {
             return !Objects.isNull(lat) && !Objects.isNull(lon);
         }
 
-        @Override
-        public boolean isEmpty() {
-            return !isPresent();
-        }
-
-
     }
 
     public static class PointBuilder<T> implements Point.Builder {
@@ -141,7 +139,7 @@ public final class Distances {
         private Double lon;
 
 
-        public PointBuilder(T data) {
+        PointBuilder(T data) {
 
             this.data = data;
         }
@@ -154,8 +152,8 @@ public final class Distances {
             return lat(lat.doubleValue());
         }
 
-        @Override
-        public PointBuilder lat(Double lat) {
+
+        PointBuilder lat(Double lat) {
             if (lat == null) {
                 return this;
             }
@@ -172,8 +170,7 @@ public final class Distances {
             return lon(lon.doubleValue());
         }
 
-        @Override
-        public PointBuilder lon(Double lon) {
+        PointBuilder lon(Double lon) {
             if (lon == null) {
                 return this;
             }
@@ -246,6 +243,7 @@ public final class Distances {
 
     /**
      * Sorter
+     *
      * @param <T> the object which contains geo datas.
      */
     public static class Sorter<T> {
@@ -282,6 +280,7 @@ public final class Distances {
 
         /**
          * The null values must be at last.
+         *
          * @return the instance
          */
         public Sorter<T> nullsLast() {
@@ -291,6 +290,7 @@ public final class Distances {
 
         /**
          * the null values must be first.
+         *
          * @return the instance.
          */
         public Sorter<T> nullsFirst() {
@@ -300,6 +300,7 @@ public final class Distances {
 
         /**
          * For adding subcmparaison if point has the same coordinates.
+         *
          * @param comparator the comparator.
          * @return the instance.
          */
@@ -311,11 +312,12 @@ public final class Distances {
 
         /**
          * Sort an collection of objects.
+         *
          * @param collection the collection.
-         * @param function An function to tranform object to Point
+         * @param function   An function to tranform object to Point
          * @return the sorting list.
          */
-        public List<T> sort( Collection<T> collection, Function<T, Point<T>> function) {
+        public List<T> sort(Collection<T> collection, Function<T, Point<T>> function) {
             Objects.requireNonNull(collection);
             Objects.requireNonNull(function);
             return sort(collection.parallelStream().map(function).collect(Collectors.toSet()));
@@ -323,6 +325,7 @@ public final class Distances {
 
         /**
          * Sort an collection of Points
+         *
          * @param collection the collection.
          * @return the sorting list.
          */
@@ -340,11 +343,12 @@ public final class Distances {
 
         /**
          * The list of distance for an List of points.
+         *
          * @param collection the list.
          * @return the list of Distance.
          */
         public List<Distance> distances(List<Point<T>> collection) {
-            return MoreObjects.firstNonNull(collection, Collections.<Point<T>>emptyList()).stream()
+            return firstNonNull(collection, Collections.<Point<T>>emptyList()).stream()
                     .map(p -> between(ref, p)).collect(Collectors.toList());
         }
 
@@ -352,39 +356,31 @@ public final class Distances {
             if (ref.isEmpty()) {
                 return subComparatorOfPoints;
             }
-            final LoadingCache<Point<T>, Distance> cache = CacheBuilder.newBuilder()
-                    .maximumSize(1000).build(
-                            new CacheLoader<Point<T>, Distance>() {
-                                public Distance load(Point<T> pt) {
-                                    return between(ref, pt);
-                                }
-                            });
+            final CacheBuilder<Point<T>, Distance> cache = new CacheBuilder<>(pt -> between(ref, pt));
             return (pt1, pt2) -> {
 
-                try {
-                    if (pt1.isEmpty() && pt2.isEmpty()) {
-                        return subComparatorOfPoints.compare(pt1, pt2);
-                    }
-                    if (pt1.isEmpty()) {
-                        return nullSorting.first;
-                    }
-                    if (pt2.isEmpty()) {
-                        return nullSorting.second;
-                    }
-                    final Distance d1 = cache.get(pt1);
-                    final Distance d2 = cache.get(pt2);
-                    final int compare = d1.compareTo(d2);
-                    if (compare == 0) {
-                        return subComparatorOfPoints.compare(pt1, pt2);
-                    }
-                    if (desc) {
-                        return compare * -1;
-                    }
-                    return compare;
-                } catch (ExecutionException e) {
-                    throw Throwables.propagate(e);
+                if (pt1.isEmpty() && pt2.isEmpty()) {
+                    return subComparatorOfPoints.compare(pt1, pt2);
                 }
+                if (pt1.isEmpty()) {
+                    return nullSorting.first;
+                }
+                if (pt2.isEmpty()) {
+                    return nullSorting.second;
+                }
+                final Distance d1 = cache.get(pt1);
+                final Distance d2 = cache.get(pt2);
+                final int compare = d1.compareTo(d2);
+                if (compare == 0) {
+                    return subComparatorOfPoints.compare(pt1, pt2);
+                }
+                if (desc) {
+                    return compare * -1;
+                }
+                return compare;
             };
         }
     }
+
+
 }
